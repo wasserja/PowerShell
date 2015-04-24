@@ -37,7 +37,7 @@
 Function Start-StoppedAutomaticServices {
     [CmdletBinding()]
     [Alias()]
-    [OutputType([int])]
+    [OutputType([System.ServiceProcess.ServiceController])]
     Param
     (
         # The computer name on which you wish to start services.
@@ -57,7 +57,7 @@ Function Start-StoppedAutomaticServices {
     Begin
     {
         #Exclusions List - list of known services that are set to Auto but do not run (i.e. Performance Logs and Alerts)
-        $ExclusionList = @('clr_optimization_v4.0.30319_32','clr_optimization_v4.0.30319_64','SysmonLog','ShellHWDetection','sppsvc','gupdate','MMCSS','RemoteRegistry','ccmsetup','wuauserv')
+        $ExclusionList = @('clr_optimization_v4.0.30319_32','clr_optimization_v4.0.30319_64','SysmonLog','ShellHWDetection','sppsvc','gupdate','MMCSS','RemoteRegistry','ccmsetup')
     }
     Process
     {
@@ -67,12 +67,12 @@ Function Start-StoppedAutomaticServices {
                 } 
             catch [Exception] {
                 Write-Error "$($_.Exception.Message) $Computer."
-                return
+                return 1
                 }
-            Write-Output "***********************************************************"
-            Write-Output "Checking services on $Computer using exclusion list:"
-            Write-Output $ExclusionList
-            Write-Output ""
+            #Write-Output "***********************************************************"
+            Write-Host "Checking services on $Computer using exclusion list:"
+            Write-Host $ExclusionList
+            #Write-Output ""
             if ($FilterCleanExit) {
                 $stoppedautoservices = Get-WmiObject win32_service -computername $Computer -filter "state = 'stopped' and startmode = 'auto' and exitcode != 0" | 
                 Where-Object { $ExclusionList -notcontains $_.name }
@@ -82,16 +82,15 @@ Function Start-StoppedAutomaticServices {
                 Where-Object { $ExclusionList -notcontains $_.name }
                 }
             if ( $stoppedautoservices ) {
-                Write-Output "Services needing attention:"
-                $stoppedautoservices | Format-Table __SERVER,Name,DisplayName,startmode,state,exitcode -AutoSize
-                Write-Output "Starting Services: "
+                Write-Verbose "Services needing attention:"
+                $stoppedautoservices | Select-Object -Property PSComputerName,Name,DisplayName,startmode,state,exitcode | Format-Table  -AutoSize
+                Write-Verbose "Starting Services: "
             
                 if ( $stoppedautoservices.count ) {
                     foreach ($stoppedautoservice in $stoppedautoservices) {
-                        #Write-Output "example: Invoke-Command -computername $computer {start-service $($stoppedautoservice.name)}"
                         Write-Verbose "Checking WS-MAN"
                         try {if (Test-WSMan -ComputerName $computer -ErrorAction Stop) {
-                            Write-Output "Starting $($stoppedautoservice.DisplayName) on $computer"
+                            Write-Verbose "Starting $($stoppedautoservice.DisplayName) on $Computer"
                             Invoke-Command -ComputerName $computer {Start-Service -DisplayName $args[0]} -ArgumentList $stoppedautoservice.DisplayName 
                             # Add Logic here to confirm service is running
                             }
@@ -99,7 +98,7 @@ Function Start-StoppedAutomaticServices {
                         # If PowerShell remoting is not enabled we will use the sc.exe command to cycle the service.
                         catch {
                             Write-Verbose "WS-Man is unavailable. Using sc.exe"
-                            Write-Output "Starting $($stoppedautoservice.DisplayName) on $Computer"
+                            Write-Verbose "Starting $($stoppedautoservice.DisplayName) on $Computer"
                             Invoke-Expression "sc.exe \\$Computer start $($stoppedautoservice.name)"
                             # Add Logic here to confirm service is running
                             }
@@ -108,7 +107,7 @@ Function Start-StoppedAutomaticServices {
                 else {
                     Write-Verbose "Checking WS-MAN"
                     try {if (Test-WSMan -ComputerName $Computer -ErrorAction Stop) {
-                        Write-Output "Starting $($stoppedautoservices.DisplayName) on $Computer"
+                        Write-Verbose "Starting $($stoppedautoservices.DisplayName) on $Computer"
                         Invoke-Command -ComputerName $Computer {Start-Service -DisplayName $args[0]} -ArgumentList $stoppedautoservices.DisplayName 
                         # Add Logic here to confirm service is running
                         }
@@ -116,16 +115,14 @@ Function Start-StoppedAutomaticServices {
                     # If PowerShell remoting is not enabled we will use the sc.exe command to cycle the service.
                     catch {
                         Write-Verbose "WS-Man is unavailable. Using sc.exe"
-                        Write-Output "Starting $($stoppedautoservices.DisplayName) on $Computer"
+                        Write-Verbose "Starting $($stoppedautoservices.DisplayName) on $Computer"
                         Invoke-Expression "sc.exe \\$Computer start $($stoppedautoservices.name)"
                         # Add Logic here to confirm service is running
                         }
                     }
-                Write-Output "***********************************************************"
                 }
             else {
-                write-host "All automatic services are running."
-                Write-Output "***********************************************************"
+                write-Verbose "All automatic services are running."
                 }
         }
     }

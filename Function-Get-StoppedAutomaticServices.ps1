@@ -6,9 +6,9 @@
    This is useful for checking servers after patching for any services that didn't start automatically.
 .NOTES
    By: Jason Wasser
-   Modified: 4/24/2015 03:24:50 PM 
+   Modified: 4/24/2015 04:31:56 PM  
    Changelog:
-    * Cleanup script to output actual service objects.
+    * Rewrite script to output actual service objects.
 .PARAMETER ComputerName
    Enter the name of a computer or a list of computers. Accepts pipeline input. Default: localhost.
 .PARAMETER FilterCleanExit
@@ -33,6 +33,7 @@
    but have no further work to do (includes Trigger Start)
 .EXAMPLE
    Get-Content C:\Temp\serverlist.txt | Get-StoppedAutomaticService | Start-Service
+   Get a list of stopped automatic services from a list of computers and then start the services.
 #>
 Function Get-StoppedAutomaticService {
     [CmdletBinding()]
@@ -50,7 +51,7 @@ Function Get-StoppedAutomaticService {
 		    ValueFromPipeLineByPropertyName=$true)]
         [switch]$FilterCleanExit,
         
-
+        # Exclusion List
         $ExclusionList = @('clr_optimization_v4.0.30319_32','clr_optimization_v4.0.30319_64','SysmonLog','ShellHWDetection','sppsvc','gupdate','MMCSS','RemoteRegistry','ccmsetup')
     )
     begin{}
