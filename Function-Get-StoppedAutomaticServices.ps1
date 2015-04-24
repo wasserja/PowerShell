@@ -68,13 +68,14 @@ Function Get-StoppedAutomaticServices {
                 }
             if ( $stoppedautoservices ) {
                 Write-Verbose "Services needing attention:"
-                Write-Verbose $($stoppedautoservices | Select-Object -Property PSComputerName,Name,DisplayName,startmode,state,exitcode | Format-Table –autosize)
+                $stoppedautoservices | ForEach-Object {Write-Verbose $_.DisplayName}
+                #Write-Verbose $($stoppedautoservices | Select-Object -Property PSComputerName,Name,DisplayName,startmode,state,exitcode | Format-Table –autosize)
                 $stoppedautoservices
                 Write-Verbose "To start the service type: "
                 Write-Verbose "Invoke-Command -computername servername {start-service nameofservice}"
                 if ( $stoppedautoservices.count ) {
                     foreach ($stoppedautoservice in $stoppedautoservices) {
-                        Write-Verbose "example: Invoke-Command -computername $computer {start-service $($stoppedautoservice.name)}"
+                        Write-Verbose "Example: Invoke-Command -computername $computer {start-service $($stoppedautoservice.name)}"
                         }
                     }
                 else {
@@ -84,7 +85,7 @@ Function Get-StoppedAutomaticServices {
                     }
                 }
             else {
-                Write-Host "$Computer`: All services ok."
+                Write-Verbose "$Computer`: All services ok."
                 }
         }
         }
