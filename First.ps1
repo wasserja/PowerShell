@@ -15,10 +15,10 @@ function Verb-Noun
     Param
     (
         # Param1 help description
-        [Parameter(Mandatory=$true,
+        [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
-        $ComputerName,
+        [string[]]$ComputerName=$env:COMPUTERNAME,
 
         # Param2 help description
         [int]
@@ -30,6 +30,9 @@ function Verb-Noun
     }
     Process
     {
+        foreach ($Computer in $ComputerName) {
+            Write-Output $Computer
+            }
     }
     End
     {
