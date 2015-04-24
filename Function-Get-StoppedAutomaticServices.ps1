@@ -48,18 +48,16 @@ Function Get-StoppedAutomaticServices {
         $ExclusionList = @('clr_optimization_v4.0.30319_32','clr_optimization_v4.0.30319_64','SysmonLog','ShellHWDetection','sppsvc','gupdate','MMCSS','RemoteRegistry','ccmsetup')
     }
     process {
-        foreach ($computer in $ComputerName) {
+        foreach ($Computer in $ComputerName) {
             try {
-                $hostdns = [System.Net.DNS]::GetHostEntry($computer)
+                $hostdns = [System.Net.DNS]::GetHostEntry($Computer)
                 } 
             catch [Exception] {
-                Write-Error "$($_.Exception.Message) $computer."
+                Write-Error "$($_.Exception.Message) $Computer."
                 return
                 }
-            Write-Output "***********************************************************"
-            Write-Output "Checking services on $computer using exclusion list:"
-            Write-Output $ExclusionList
-            Write-Output ""
+            Write-Verbose "Checking services on $computer using exclusion list:"
+            $ExclusionList | ForEach-Object {Write-Verbose $_}
             if ($FilterCleanExit) {
                 $stoppedautoservices = Get-WmiObject win32_service -computername $computer -filter "state = 'stopped' and startmode = 'auto' and exitcode != 0" | 
                 Where-Object { $ExclusionList -notcontains $_.name }
@@ -69,25 +67,24 @@ Function Get-StoppedAutomaticServices {
                 Where-Object { $ExclusionList -notcontains $_.name }
                 }
             if ( $stoppedautoservices ) {
-                Write-Output "Services needing attention:"
-                $stoppedautoservices | Format-Table __SERVER,Name,DisplayName,startmode,state,exitcode –autosize
-                Write-Output "To start the service type: "
-                Write-Output "Invoke-Command -computername servername {start-service nameofservice}"
+                Write-Verbose "Services needing attention:"
+                Write-Verbose $($stoppedautoservices | Select-Object -Property PSComputerName,Name,DisplayName,startmode,state,exitcode | Format-Table –autosize)
+                $stoppedautoservices
+                Write-Verbose "To start the service type: "
+                Write-Verbose "Invoke-Command -computername servername {start-service nameofservice}"
                 if ( $stoppedautoservices.count ) {
                     foreach ($stoppedautoservice in $stoppedautoservices) {
-                        Write-Output "example: Invoke-Command -computername $computer {start-service $($stoppedautoservice.name)}"
+                        Write-Verbose "example: Invoke-Command -computername $computer {start-service $($stoppedautoservice.name)}"
                         }
                     }
                 else {
                     $examplecomputer = $stoppedautoservices.__SERVER
                     $exampleservice = $stoppedautoservices.name
-                    Write-Output "Example: Invoke-Command -computername $examplecomputer {start-service $exampleservice}"
+                    Write-Verbose "Example: Invoke-Command -computername $examplecomputer {start-service $exampleservice}"
                     }
-                Write-Output "***********************************************************"
                 }
             else {
-                Write-Output "All services ok."
-                Write-Output "***********************************************************"
+                Write-Host "$Computer`: All services ok."
                 }
         }
         }
