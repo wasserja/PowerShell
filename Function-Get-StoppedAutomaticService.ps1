@@ -6,8 +6,9 @@
    This is useful for checking servers after patching for any services that didn't start automatically.
 .NOTES
    By: Jason Wasser
-   Modified: 4/24/2015 04:31:56 PM  
+   Modified: 4/27/2015 09:50:22 AM   
    Changelog:
+    * Removed OutputType since it wasn't working consistently.
     * Rewrite script to output actual service objects.
 .PARAMETER ComputerName
    Enter the name of a computer or a list of computers. Accepts pipeline input. Default: localhost.
@@ -37,7 +38,6 @@
 #>
 Function Get-StoppedAutomaticService {
     [CmdletBinding()]
-    [OutputType([System.ServiceProcess.ServiceController])]
     param
     (
 	    [Parameter(Mandatory=$false,
