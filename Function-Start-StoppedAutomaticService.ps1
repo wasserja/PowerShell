@@ -32,8 +32,6 @@
 #>
 Function Start-StoppedAutomaticService {
     [CmdletBinding()]
-    [Alias()]
-    [OutputType([System.ServiceProcess.ServiceController])]
     Param
     (
         # The computer name on which you wish to start services.
