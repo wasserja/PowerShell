@@ -60,8 +60,7 @@ Function Start-StoppedAutomaticService {
             else {
                 Get-StoppedAutomaticService -ComputerName $Computer | Start-Service
                 }
-            
-        }
+            }
     }
     End
     {
