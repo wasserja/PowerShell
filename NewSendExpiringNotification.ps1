@@ -1,16 +1,53 @@
-﻿##############Variables#################            
-$verbose = $false           
-$notificationstartday = 10
-$sendermailaddress = "no-reply@domain.com"            
-$SMTPserver = "smtp-tpa.domain.com"            
-$DN = "DC=domain,DC=com" 
-$expiringpassusers = @()           
+﻿<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Send-PasswordExpirationNotification
+{
+    [CmdletBinding()]
+    [Alias()]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        $Param1,
+
+        # How many days prior to expiration
+        [int]$NotificationStartDay = 10,
+        [string]$NotificationSenderAddress="no-reply@domain.com",
+        [string]$SMTPServer="smtp.domain.com",
+        [string]$DomainNameDN="DC=domain,DC=com",
+        [string[]]$ExpiringPasswordUserList = @(),
+        [string]$SMTPUsername = "anonymous",
+        [string]$SMTPPassword = "anonymous",
+        [string]$MessageBody = "Below is the list of users with expiring password `r`n`r`n" 
+        
+    )
+
+    Begin
+    {
+    }
+    Process
+    {
+    }
+    End
+    {
+    }
+}
+
+
+##############Variables#################                    
 # SMTP Authentication
-$username = "anonymous" 
-$Password = "anonymous"
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-$credential = New-Object System.Management.Automation.PSCredential($Username,$SecurePassword)
-$messagebody = "Below is the list of users with expiring password" +  "`r`n`r`n" 
+$SecurePassword = ConvertTo-SecureString -String $SMTPPassword -AsPlainText -Force
+$Credential = New-Object System.Management.Automation.PSCredential($SMTPUsername,$SecurePassword)
 ########################################            
             
 ##############Function##################            
