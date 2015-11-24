@@ -7,9 +7,10 @@
    later debugging.
 .NOTES
    Created by: Jason Wasser @wasserja
-   Modified: 11/19/2015 03:44:50 PM 
+   Modified: 11/24/2015 09:30:19 AM  
 
    Changelog:
+    * Code simplification and clarification - thanks to @juneb_get_help
     * Added documentation.
     * Renamed LogPath parameter to Path to keep it standard - thanks to @JeffHicks
     * Revised the Force switch to work as it should - thanks to @JeffHicks
@@ -45,21 +46,16 @@ function Write-Log
     Param
     (
         [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
+                   ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
         [Alias("LogContent")]
         [string]$Message,
 
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=1)]
+        [Parameter(Mandatory=$false)]
         [Alias('LogPath')]
         [string]$Path='C:\Logs\PowerShellLog.log',
         
-        [Parameter(Mandatory=$false,
-                    ValueFromPipelineByPropertyName=$true,
-                    Position=3)]
+        [Parameter(Mandatory=$false)]
         [ValidateSet("Error","Warn","Info")]
         [string]$Level="Info",
         
@@ -77,7 +73,7 @@ function Write-Log
         
         # If the file already exists and NoClobber was specified, do not write to the log.
         if ((Test-Path $Path) -AND $NoClobber) {
-            Write-Warning "Log file $Path already exists, and you specified NoClobber. Either delete the file or specify a different name."
+            Write-Error "Log file $Path already exists, and you specified NoClobber. Either delete the file or specify a different name."
             Return
             }
 
@@ -91,21 +87,27 @@ function Write-Log
             # Nothing to see here yet.
             }
 
-        # Now do the logging and additional output based on $Level.
+        # Format Date for our Log File
+        $FormattedDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+        # Write message to error, warning, or verbose pipeline and specify $LevelText
         switch ($Level) {
             'Error' {
                 Write-Error $Message
-                Write-Output "$(Get-Date -Format "yyyy-MM-dd HH:mm:ss") ERROR: $Message" | Out-File -FilePath $Path -Append
+                $LevelText = 'ERROR:'
                 }
             'Warn' {
                 Write-Warning $Message
-                Write-Output "$(Get-Date -Format "yyyy-MM-dd HH:mm:ss") WARNING: $Message" | Out-File -FilePath $Path -Append
+                $LevelText = 'WARNING:'
                 }
             'Info' {
                 Write-Verbose $Message
-                Write-Output "$(Get-Date -Format "yyyy-MM-dd HH:mm:ss") INFO: $Message" | Out-File -FilePath $Path -Append
+                $LevelText = 'INFO:'
                 }
             }
+        
+        # Write log entry to $Path
+        "$FormattedDate $LevelText $Message" | Out-File -FilePath $Path -Append
     }
     End
     {
