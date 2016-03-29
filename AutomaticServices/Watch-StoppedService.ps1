@@ -3,6 +3,15 @@
    Short description
 .DESCRIPTION
    Long description
+
+   Right now the script only accepts a single service name and computer name. 
+   I'd like to make it work with multiple service names and/or computer names.
+   I'm stuck.
+
+   If I have a more than one service object coming in then I have to go through one at a 
+   time in the process block. I don't see a way of doing that.
+
+
 .EXAMPLE
    Example of how to use this cmdlet
 .EXAMPLE
@@ -17,11 +26,13 @@ function Watch-StoppedService
     (
         [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('ComputerName')]
-        [string]$MachineName = $env:COMPUTERNAME,
+        [string[]]$MachineName = $env:COMPUTERNAME,
         [Parameter(ValueFromPipelineByPropertyName)]
         [Alias('ServiceName')]
-        [string]$Name = 'wuauserv',
-        [int]$SleepTime = 60
+        [string[]]$Name = 'wuauserv',
+        [int]$SleepTime = 60,
+        [Parameter(ValueFromPipeline)]
+        [System.ServiceProcess.ServiceController]$Service
     )
 
     Begin
@@ -31,20 +42,23 @@ function Watch-StoppedService
 
         function Check-ServiceStatus {
             param (
-                [string]$ComputerName = $MachineName,
-                [string]$ServiceName = $Name,
-                [switch]$Wait
+                [Parameter(ValueFromPipelineByPropertyName)]
+                [Alias('ComputerName')]
+                [string[]]$MachineName,
+                [Parameter(ValueFromPipelineByPropertyName)]
+                [Alias('ServiceName')]
+                [string[]]$Name
                 )
 
             try {
                 
-                $ServiceStatus = Get-Service -Name $ServiceName -ComputerName $ComputerName -ErrorAction Stop
-                Write-Verbose "$(Get-Date) $($ServiceStatus.Name) on $ComputerName is $($ServiceStatus.Status)"
-                if ($ServiceStatus.Status -ne 'Stopped' -and $Wait) {
+                $ServiceStatus = Get-Service -Name $Name -ComputerName $MachineName -ErrorAction Stop
+                Write-Verbose "$(Get-Date) Status of Services"
+                $ServiceStatus
+                <#if ($ServiceStatus.Status -ne 'Stopped' -and $Wait) {
                     Write-Verbose "$(Get-Date) Waiting $SleepTime seconds"
                     Start-Sleep -Seconds $SleepTime
-                    }
-                $ServiceStatus
+                    }#>
                 
                 }
             catch {
@@ -55,45 +69,65 @@ function Watch-StoppedService
             }
 
         function Fix-Service {
-    
-            Write-Verbose "$(Get-Date) Starting $($Service.Name) on $MachineName"
-            $Service | Start-Service
+            param (
+                $StoppedService
+                )
+
+            Write-Verbose "$(Get-Date) Starting stopped services"
+            $StoppedService | Start-Service
     
             }
 
     }
     Process
     {
-
-        # Check to see if the service is already stopped.
-        Write-Verbose "$(Get-Date) First check of $Name on $MachineName."
-        $Service = Check-ServiceStatus
-        if ($Service) {
+        
+        foreach ($Service in $Name) {
             
-            if ($Service.Status -eq 'Stopped') {
-                Fix-Service
-                Check-ServiceStatus
-                }
+            #region FirstCheck
+        
+            # Check to see if the service is already stopped.
+            Write-Verbose "$(Get-Date) First check services."
+            
+            
+            $Service = Check-ServiceStatus -Name $Name -MachineName $MachineName
+            if ($Service) {
+            
+                $StoppedService = $Service | Where-Object -FilterScript {$_.Status -eq 'Stopped'}
 
-            else {
+                if ($StoppedService) {
+                    Fix-Service -Name $StoppedService
+                    Check-ServiceStatus
+                    }
+            #endregion
+
+            #region LoopCheck
+                else {
     
-                # Loop until it stops
-                do {
+                    # Loop until it stops
+                    do {
 
-                    $Service = Check-ServiceStatus -Wait
+                        $Service = Check-ServiceStatus -Wait
 
+                    }
+                    until ($Service.Status -eq 'Stopped')
+
+                    Fix-Service
+                    Check-ServiceStatus
+                    }
+            #endregion
                 }
-                until ($Service.Status -eq 'Stopped')
-
-                Fix-Service
-                Check-ServiceStatus
+            else {
+                Write-Verbose "$(Get-Date) Unable to find services"
+                return
                 }
+        
+            
+            
+            }
+        
 
-            }
-        else {
-            Write-Verbose "$(Get-Date) Unable to find $Name on $MachineName"
-            return
-            }
+
         
     }
     End
