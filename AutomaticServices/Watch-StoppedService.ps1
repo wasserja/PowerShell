@@ -19,19 +19,27 @@
 #>
 function Watch-StoppedService
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Manual')]
     [Alias()]
     [OutputType([int])]
     Param
     (
-        [Parameter(ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipelineByPropertyName,
+                    ParameterSetName='Manual')]
         [Alias('ComputerName')]
         [string[]]$MachineName = $env:COMPUTERNAME,
-        [Parameter(ValueFromPipelineByPropertyName)]
+        
+        [Parameter(ValueFromPipelineByPropertyName,
+                    ParameterSetName='Manual')]
         [Alias('ServiceName')]
         [string[]]$Name = 'wuauserv',
+        
+        [Parameter(ValueFromPipelineByPropertyName,
+                    ParameterSetName='Manual')]
         [int]$SleepTime = 60,
-        [Parameter(ValueFromPipeline)]
+        
+        [Parameter(ValueFromPipeline,
+                    ParameterSetName='ServiceController')]
         [System.ServiceProcess.ServiceController]$Service
     )
 
@@ -39,6 +47,8 @@ function Watch-StoppedService
     {
 
         $VerbosePreference = 'Continue'
+
+
 
         function Check-ServiceStatus {
             param (
@@ -68,9 +78,9 @@ function Watch-StoppedService
             
             }
 
-        function Fix-Service {
+        function Start-StoppedService {
             param (
-                $StoppedService
+                [System.ServiceProcess.ServiceController]$StoppedService
                 )
 
             Write-Verbose "$(Get-Date) Starting stopped services"
@@ -87,7 +97,7 @@ function Watch-StoppedService
             #region FirstCheck
         
             # Check to see if the service is already stopped.
-            Write-Verbose "$(Get-Date) First check services."
+            Write-Verbose "$(Get-Date) First check of services."
             
             
             $Service = Check-ServiceStatus -Name $Name -MachineName $MachineName
@@ -96,8 +106,8 @@ function Watch-StoppedService
                 $StoppedService = $Service | Where-Object -FilterScript {$_.Status -eq 'Stopped'}
 
                 if ($StoppedService) {
-                    Fix-Service -Name $StoppedService
-                    Check-ServiceStatus
+                    Start-StoppedService -StoppedService $StoppedService
+                    Check-ServiceStatus -Name $Name -MachineName $MachineName
                     }
             #endregion
 
