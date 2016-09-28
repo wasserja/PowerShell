@@ -6,10 +6,20 @@
 
 # Try CIM first, fall back on WMI
 
-try {
-    $isWSManAlive = if (Test-WSMan -ComputerName) {
-        $Data = Get-CimInstance -Namespace $Namespace -ClassName $ClassName -ComputerName $ComputerName
-        } 
-    }
-catch {
+process {
+    foreach ($Computer in $ComputerName) {
+        
+       try {
+            if (Test-WSMan -ComputerName $Computer) {
+            $Data = Get-CimInstance -Namespace $Namespace -ClassName $ClassName -ComputerName $Computer
+            
+            } 
+        }
+        catch {
+            Write-Error $Error[0].Exception
+            } 
+
+        $Data
+        }
+    
     }
