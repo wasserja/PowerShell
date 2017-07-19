@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param (
     [ValidateScript( {Test-Path -Path $_})]    
-    [string]$FileListLog = 'C:\Logs\FileListLog.log'    
+    [string]$FileListLog = 'C:\Logs\FileList.log'    
         
 )
     

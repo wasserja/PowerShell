@@ -1,11 +1,12 @@
-[string]$Folder = "||Folder||"
+Add-Type -AssemblyName System.Web
+[string]$Folder = [System.Web.HttpUtility]::UrlDecode("||Folder||")
 [bool]$Recurse = $true
 [string]$LogPath = 'C:\Logs'
 
 if (!(Test-Path -Path $LogPath)) {
     New-Item -Path $LogPath -ItemType Directory | Out-Null
 }
-$FileListLog = $LogPath + '\FileListLog.log'
+$FileListLog = $LogPath + '\FileList.log'
 
 if ($Recurse) {
     Write-Verbose -Message "Recursively logging all files from $Folder to $FileListLog"
